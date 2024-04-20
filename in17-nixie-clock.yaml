@@ -34,7 +34,7 @@ uart:
 sensor:
   - platform: homeassistant
     name: "ETH Price"
-    id: eth_price
+    id: ethprice
     entity_id: sensor.eth_price
   - platform: homeassistant
     name: "Temperature"
@@ -52,10 +52,11 @@ button:
     icon: "mdi:clock-edit-outline"
     on_press:
       - uart.write: !lambda >
-          char str[8];
           esphome::ESPTime now = id(sntp_time).now();
-          now.strftime(str, sizeof(str), "T%H%M%S");
           ESP_LOGI("main", "updating ATMega time");
+
+          char str[8];
+          now.strftime(str, sizeof(str), "T%H%M%S");
           std::vector<unsigned char> vec(str, str + sizeof(str) - 1);
           return vec;
   - platform: template
@@ -64,10 +65,14 @@ button:
     icon: "mdi:home-thermometer-outline"
     on_press:
       - uart.write: !lambda >
+          float tempValue = id(temperature).state;
+          float humidityValue = id(humidity).state;
+          ESP_LOGI("main", "temperature: %f, humidity: %f", tempValue, humidityValue);
+          if (isnan(tempValue)) tempValue = 0;
+          if (isnan(humidityValue)) humidityValue = 0;
+
           char str[8];
-          ESP_LOGI("main", "temperature: %f", id(temperature).state);
-          ESP_LOGI("main", "humidity: %f", id(humidity).state);
-          snprintf(str, sizeof(str), "M%02.0f__%02.0f", id(temperature).state, id(humidity).state);
+          snprintf(str, sizeof(str), "M%02.0f__%02.0f", tempValue, humidityValue);
           std::vector<unsigned char> vec(str, str + sizeof(str) - 1);
           return vec;
   - platform: template
@@ -76,11 +81,13 @@ button:
     icon: "mdi:ethereum"
     on_press:
       - uart.write: !lambda >
+          float value = id(ethprice).state;
+          ESP_LOGI("main", "eth price: %f", value);
+          if (isnan(value)) value = 0;
+
           char str[8];
-          unsigned char i = 1;
-          ESP_LOGI("main", "eth price: %f", id(eth_price).state);
-          snprintf(str, sizeof(str), "M%06d", int(id(eth_price).state));
-          while (str[i] == '0' && i < 6) str[i++] = '_';     
+          snprintf(str, sizeof(str), "M%06d", int(value));
+          for (int i = 1; str[i] == '0' && i < 6; i++) str[i] = '_';     
           std::vector<unsigned char> vec(str, str + sizeof(str) - 1);
           return vec;
 
