@@ -1,66 +1,77 @@
 #include "Arduino.h"
-#include "avr/pgmspace.h"
 #include "Wire.h"
 #include "avr/io.h"
 #include "avr/interrupt.h"
+#include "avr/pgmspace.h"
 
 #define BLANK 0xFF
 
-enum State
+#define SHOW_TIME()        \
+  Digits[0] = Hour / 10;   \
+  Digits[1] = Hour % 10;   \
+  Digits[2] = Minute / 10; \
+  Digits[3] = Minute % 10; \
+  Digits[4] = Second / 10; \
+  Digits[5] = Second % 10;
+
+enum ClockState
 {
   DISPLAYOFF,
   TIME,
   MANUAL,
-  ANIMATION,
   CATHODE_CLEAN,
 };
 
-// global variables
-unsigned char INDEX = 1;
+const int NUM_DIGITS = 6;
+const unsigned long CYCLE_PERIOD_MS = 20;
+const unsigned char DIGIT_ANODES[NUM_DIGITS] = {0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+const int NUM_MANUAL_CYCLES = 20;
+const int NUM_CLEANING_CYCLES = 100;
 
-unsigned char DIGIT6 = 6;
-unsigned char DIGIT5 = 5;
-unsigned char DIGIT4 = 4;
-unsigned char DIGIT3 = 3;
-unsigned char DIGIT2 = 2;
-unsigned char DIGIT1 = 1;
+// current digit values
+unsigned char Digits[NUM_DIGITS] = {6, 5, 4, 3, 2, 1};
+unsigned char Index = 0;
 
-volatile unsigned char HOUR = 0;
-volatile unsigned char MINUTE = 0;
-volatile unsigned char SECOND = 0;
+// current time values
+volatile unsigned char Hour = 0;
+volatile unsigned char Minute = 0;
+volatile unsigned char Second = 0;
 
-volatile unsigned char SECONDS_LEFT = 0;
+// for manual display tracking
+bool Blanks[NUM_DIGITS] = {false, false, false, false, false, false};
+volatile unsigned char ManualSecondsLeft = 0;
+bool FinishedCycleIn = false;
+bool StartedCycleOut = false;
 
-String serialIn;
-State state = TIME;
+// for cycle animation tracking
+unsigned long LastCycleMillis = 0;
+unsigned int CyclesLeft;
+
+String SerialIn;
+ClockState State = TIME;
 
 // timer1 used for RTC
 ISR(TIMER1_COMPA_vect)
 {
-  if (++SECOND == 60)
+  if (ManualSecondsLeft > 0)
+    ManualSecondsLeft--;
+
+  if (++Second == 60)
   {
-    SECOND = 0;
+    Second = 0;
 
-    if (++MINUTE == 60)
+    if (++Minute == 60)
     {
-      MINUTE = 0;
+      Minute = 0;
 
-      if (++HOUR == 24)
-        HOUR = 0;
+      if (++Hour == 24)
+        Hour = 0;
     }
   }
 
-  if (SECONDS_LEFT > 0)
-    SECONDS_LEFT--;
-
-  if (state == TIME)
+  if (State == TIME)
   {
-    DIGIT6 = HOUR / 10;
-    DIGIT5 = HOUR % 10;
-    DIGIT4 = MINUTE / 10;
-    DIGIT3 = MINUTE % 10;
-    DIGIT2 = SECOND / 10;
-    DIGIT1 = SECOND % 10;
+    SHOW_TIME()
   }
 }
 
@@ -70,121 +81,13 @@ ISR(TIMER2_COMPA_vect)
   PORTB = 0x00; // blank cathode
   PORTD = 0x00; // blank anodes
 
-  if (state == DISPLAYOFF)
+  if (State == DISPLAYOFF)
     return;
 
-  switch (INDEX++)
-  {
-  case 1:
-    PORTB |= DIGIT6;                         // set cathode
-    PORTD = (DIGIT6 == BLANK) ? 0x00 : 0x04; // turn on anode for digit
-    break;
-  case 2:
-    PORTB |= DIGIT5;
-    PORTD = (DIGIT5 == BLANK) ? 0x00 : 0x08;
-    break;
-  case 3:
-    PORTB |= DIGIT4;
-    PORTD = (DIGIT4 == BLANK) ? 0x00 : 0x10;
-    break;
-  case 4:
-    PORTB |= DIGIT3;
-    PORTD = (DIGIT3 == BLANK) ? 0x00 : 0x20;
-    break;
-  case 5:
-    PORTB |= DIGIT2;
-    PORTD = (DIGIT2 == BLANK) ? 0x00 : 0x40;
-    break;
-  case 6:
-    PORTB |= DIGIT1;
-    PORTD = (DIGIT1 == BLANK) ? 0x00 : 0x80;
-    INDEX = 1;
-    break;
-  }
+  PORTB = Digits[Index];                                         // set cathode
+  PORTD = (Digits[Index] == BLANK) ? 0x00 : DIGIT_ANODES[Index]; // turn on anode for digit
+  Index = (Index + 1) % NUM_DIGITS;
 }
-
-// void animation()
-// {
-//   MANUAL_DISPLAY_TIME = 0xFF;
-
-//   for (int i = 6; i >= 1; i--)
-//   {
-//     switch (i)
-//     {
-//     case 1:
-//       DIGIT1 = BLANK;
-//       break;
-//     case 2:
-//       DIGIT2 = BLANK;
-//       break;
-//     case 3:
-//       DIGIT3 = BLANK;
-//       break;
-//     case 4:
-//       DIGIT4 = BLANK;
-//       break;
-//     case 5:
-//       DIGIT5 = BLANK;
-//       break;
-//     case 6:
-//       DIGIT6 = BLANK;
-//       break;
-//     }
-
-//     delay(50);
-//   }
-
-//   delay(50);
-
-//   for (int i = 6; i >= 1; i--)
-//   {
-//     switch (i)
-//     {
-//     case 1:
-//       DIGIT1 = SECOND % 10;
-//       break;
-//     case 2:
-//       DIGIT2 = SECOND / 10;
-//       break;
-//     case 3:
-//       DIGIT3 = MINUTE % 10;
-//       break;
-//     case 4:
-//       DIGIT4 = MINUTE / 10;
-//       break;
-//     case 5:
-//       DIGIT5 = HOUR % 10;
-//       break;
-//     case 6:
-//       DIGIT6 = HOUR / 10;
-//       break;
-//     }
-
-//     delay(50);
-//   }
-
-//   delay(50);
-
-//   MANUAL_DISPLAY_TIME = 0;
-// }
-
-// void cathode_clean()
-// {
-//   MANUAL_DISPLAY_TIME = 0xFF;
-
-//   for (int i = 0; i < 200; i++)
-//   {
-//     DIGIT6 = random(0, 10);
-//     DIGIT5 = random(0, 10);
-//     DIGIT4 = random(0, 10);
-//     DIGIT3 = random(0, 10);
-//     DIGIT2 = random(0, 10);
-//     DIGIT1 = random(0, 10);
-//     delay(20);
-//   }
-
-//   MANUAL_DISPLAY_TIME = 0;
-// }
 
 void setup()
 {
@@ -222,41 +125,102 @@ void loop()
   if (Serial.available() > 0)
   {
     // read input from ESP8266/ESPHome
-    serialIn = Serial.readString();
+    SerialIn = Serial.readString();
 
-    switch (serialIn[0])
+    switch (SerialIn[0])
     {
     case '0':
-      state = DISPLAYOFF;
+      State = DISPLAYOFF;
       break;
     case '1':
-      state = TIME;
+      State = TIME;
       break;
+
     case 'T':
-      HOUR = (serialIn[1] - '0') * 10 + serialIn[2] - '0';
-      MINUTE = (serialIn[3] - '0') * 10 + serialIn[4] - '0';
-      SECOND = (serialIn[5] - '0') * 10 + serialIn[6] - '0';
+      Hour = (SerialIn[1] - '0') * 10 + SerialIn[2] - '0';
+      Minute = (SerialIn[3] - '0') * 10 + SerialIn[4] - '0';
+      Second = (SerialIn[5] - '0') * 10 + SerialIn[6] - '0';
+      break;
+
+    case 'C':
+      if (State != TIME)
+        break;
+
+      State = CATHODE_CLEAN;
+      LastCycleMillis = 0;
+      CyclesLeft = NUM_CLEANING_CYCLES;
       break;
     case 'M':
-      state = MANUAL;
+      if (State != TIME)
+        break;
 
-      // TODO: transition animation
-      DIGIT6 = serialIn[1] != '_' ? serialIn[1] - '0' : BLANK;
-      DIGIT5 = serialIn[2] != '_' ? serialIn[2] - '0' : BLANK;
-      DIGIT4 = serialIn[3] != '_' ? serialIn[3] - '0' : BLANK;
-      DIGIT3 = serialIn[4] != '_' ? serialIn[4] - '0' : BLANK;
-      DIGIT2 = serialIn[5] != '_' ? serialIn[5] - '0' : BLANK;
-      DIGIT1 = serialIn[6] != '_' ? serialIn[6] - '0' : BLANK;
+      State = MANUAL;
+      LastCycleMillis = 0;
+      CyclesLeft = NUM_MANUAL_CYCLES;
+      ManualSecondsLeft = 5;
+      FinishedCycleIn = false;
+      StartedCycleOut = false;
 
-      SECONDS_LEFT = 5;
+      for (int i = 0; i < NUM_DIGITS; i++)
+      {
+        Blanks[i] = SerialIn[i + 1] == '_';
+        Digits[i] = Blanks[i] ? random(0, 10) : SerialIn[i + 1] - '0';
+      }
       break;
+
     default:
       break;
     }
   }
 
-  if (state == MANUAL && SECONDS_LEFT == 0)
+  if (CyclesLeft > 0)
   {
-    state = TIME;
+    if (millis() - LastCycleMillis > CYCLE_PERIOD_MS)
+    {
+      for (int i = 0; i < NUM_DIGITS; i++)
+        Digits[i] = (Digits[i] + 1) % 10;
+
+      LastCycleMillis = millis();
+      CyclesLeft--;
+    }
+  }
+  else if (State == MANUAL)
+  {
+    if (ManualSecondsLeft > 0)
+    {
+      if (!FinishedCycleIn)
+      {
+        // cycle in complete, restore blanks
+        for (int i = 0; i < NUM_DIGITS; i++)
+          if (Blanks[i])
+            Digits[i] = BLANK;
+        
+        FinishedCycleIn = true;
+      }
+    }
+    else // manual display time over, cycle out
+    {
+      if (!StartedCycleOut)
+      {
+        StartedCycleOut = true;
+        LastCycleMillis = 0;
+        CyclesLeft = NUM_MANUAL_CYCLES;
+
+        // replace blanks with digit when cycling
+        for (int i = 0; i < NUM_DIGITS; i++)
+          if (Blanks[i])
+            Digits[i] = random(0, 10);
+      }
+      else
+      {
+        SHOW_TIME()
+        State = TIME;
+      }
+    }
+  }
+  else if (State == CATHODE_CLEAN)
+  {
+    SHOW_TIME()
+    State = TIME;
   }
 }

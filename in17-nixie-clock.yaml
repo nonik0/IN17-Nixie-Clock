@@ -26,10 +26,10 @@ uart:
   tx_pin: 1
   rx_pin: 3
   baud_rate: 9600
-  # debug:
-  #   direction: BOTH
-  #   sequence:
-  #     - lambda: UARTDebug::log_string(direction, bytes);
+  debug:
+    direction: BOTH
+    sequence:
+      - lambda: UARTDebug::log_string(direction, bytes);
 
 sensor:
   - platform: homeassistant
@@ -46,6 +46,11 @@ sensor:
     entity_id: sensor.machine_room_sensor_humidity
 
 button:
+  - platform: template
+    name: "Clean Cathodes"
+    icon: "mdi:monitor-shimmer"
+    on_press:
+      - uart.write: 'C'
   - platform: template
     name: "Sync Time"
     id: synctime
