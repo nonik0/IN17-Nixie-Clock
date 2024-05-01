@@ -4,4 +4,4 @@ Hardware Used:
 
 The ATMega runs the clock firmware and takes simple commands via serial from the ESP8266, which is managed using ESPHome.
 
-TODO: add ESPHome YAML configuration
+TODO: pictures/videos
