@@ -1,4 +1,5 @@
 Hardware Used:
+- 6x [IN-17 Nixie Tube](https://www.swissnixie.com/tubes/IN17/)
 - [UNO R3 + WIFI ESP8266 + CH340G Arduino and WIFI](https://www.instructables.com/UNO-R3-WIFI-ESP8266-CH340G-Arduino-and-WIFI-a-Vers/)
 - [Arduino IN-17 Nixie Shield](https://www.tindie.com/products/florinc/arduino-nixie-shield-kit-for-six-in-17-tubes/)
 - [Polycase AN-12P Diecast Aluminum NEMA Enclosure](https://www.polycase.com/an-12p#AN-12P-02)
