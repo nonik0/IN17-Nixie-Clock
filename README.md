@@ -1,4 +1,6 @@
-Hardware Used:
+# IN-17 Nixie Clock
+
+## Hardware Used:
 - 6x [IN-17 Nixie Tube](https://www.swissnixie.com/tubes/IN17/)
 - [UNO R3 + WIFI ESP8266 + CH340G Arduino and WIFI](https://www.instructables.com/UNO-R3-WIFI-ESP8266-CH340G-Arduino-and-WIFI-a-Vers/)
 - [Arduino IN-17 Nixie Shield](https://www.tindie.com/products/florinc/arduino-nixie-shield-kit-for-six-in-17-tubes/)
@@ -15,4 +17,13 @@ C | Run a longer cathode cycle routine
 THHMMSS | Set ATMega internal RTC time to HH:MM:SS
 MXXXXXX | Display value XXXXXX for a few seconds, use '_' to blank digit
 
-TODO: pictures/videos
+## Images
+
+<img width="400" src="https://github.com/nonik0/IN17-Nixie-Clock/assets/17152317/8ab2aef9-2258-4203-8cac-730cf0cc542c"/>
+<img width="400" src="https://github.com/nonik0/IN17-Nixie-Clock/assets/17152317/4c3f7974-5dd1-4624-a640-3a930930a903"/>
+<img width="400" src="https://github.com/nonik0/IN17-Nixie-Clock/assets/17152317/90a4e563-919f-4cfd-9d99-a90d332aa6af"/>
+<img width="400" src="https://github.com/nonik0/IN17-Nixie-Clock/assets/17152317/2934a52e-2af5-44b2-97c2-b1b981ed6258"/>
+
+## Animations
+
+<img width="400" src="https://github.com/nonik0/IN17-Nixie-Clock/assets/17152317/bf8bf09e-7777-48de-a668-0451fec2d1b1"/>
