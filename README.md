@@ -20,6 +20,7 @@ MXXXXXX | Display value XXXXXX for a few seconds, use '_' to blank digit
 ## Images
 
 <img width="400" src="https://github.com/nonik0/IN17-Nixie-Clock/assets/17152317/8ab2aef9-2258-4203-8cac-730cf0cc542c"/>
+<img width="400" src="https://github.com/nonik0/IN17-Nixie-Clock/assets/17152317/5d3902fc-4cd1-4daf-bb4e-e1d2a2e445a9"/>
 <img width="400" src="https://github.com/nonik0/IN17-Nixie-Clock/assets/17152317/4c3f7974-5dd1-4624-a640-3a930930a903"/>
 <img width="400" src="https://github.com/nonik0/IN17-Nixie-Clock/assets/17152317/90a4e563-919f-4cfd-9d99-a90d332aa6af"/>
 <img width="400" src="https://github.com/nonik0/IN17-Nixie-Clock/assets/17152317/2934a52e-2af5-44b2-97c2-b1b981ed6258"/>
