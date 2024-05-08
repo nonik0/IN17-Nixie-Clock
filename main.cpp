@@ -6,12 +6,15 @@
 
 #define BLANK 0xFF
 
-#define SHOW_TIME()        \
-  Digits[0] = Hour / 10;   \
-  Digits[1] = Hour % 10;   \
-  Digits[2] = Minute / 10; \
-  Digits[3] = Minute % 10; \
-  Digits[4] = Second / 10; \
+#define SHOW_TIME()                       \
+  char hour = is24Hour                    \
+                  ? Hour                  \
+                  : (Hour + 11) % 12 + 1; \
+  Digits[0] = hour / 10;                  \
+  Digits[1] = hour % 10;                  \
+  Digits[2] = Minute / 10;                \
+  Digits[3] = Minute % 10;                \
+  Digits[4] = Second / 10;                \
   Digits[5] = Second % 10;
 
 enum ClockState
@@ -49,6 +52,7 @@ unsigned int CyclesLeft;
 
 String SerialIn;
 ClockState State = TIME;
+bool is24Hour = true;
 
 // timer1 used for RTC
 ISR(TIMER1_COMPA_vect)
@@ -65,7 +69,9 @@ ISR(TIMER1_COMPA_vect)
       Minute = 0;
 
       if (++Hour == 24)
+      {
         Hour = 0;
+      }
     }
   }
 
@@ -136,6 +142,13 @@ void loop()
       State = TIME;
       break;
 
+    case 'h':
+      is24Hour = false;
+      break;
+    case 'H':
+      is24Hour = true;
+      break;
+
     case 'T':
       Hour = (SerialIn[1] - '0') * 10 + SerialIn[2] - '0';
       Minute = (SerialIn[3] - '0') * 10 + SerialIn[4] - '0';
@@ -194,7 +207,7 @@ void loop()
         for (int i = 0; i < NUM_DIGITS; i++)
           if (Blanks[i])
             Digits[i] = BLANK;
-        
+
         FinishedCycleIn = true;
       }
     }

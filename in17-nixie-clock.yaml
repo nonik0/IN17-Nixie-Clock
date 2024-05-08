@@ -107,6 +107,16 @@ switch:
       - uart.write: '1'
     turn_off_action:
       - uart.write: '0'
+  - platform: template
+    name: "24 Hour Mode"
+    icon: "mdi:hours-24"
+    restore_mode: ALWAYS_ON 
+    optimistic: True
+    assumed_state: True
+    turn_on_action:
+      - uart.write: 'H'
+    turn_off_action:
+      - uart.write: 'h'
 
 time:
   - platform: sntp
