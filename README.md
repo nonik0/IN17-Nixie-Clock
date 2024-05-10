@@ -13,6 +13,8 @@ The ATMega runs the clock firmware and takes simple commands via serial from the
 --- | ---
 0 | Turns off display
 1 | Turns on display
+h | Set 12 hour mode
+H | Set 24 hour mode
 C | Run a longer cathode cycle routine
 THHMMSS | Set ATMega internal RTC time to HH:MM:SS
 MXXXXXX | Display value XXXXXX for a few seconds, use '_' to blank digit
