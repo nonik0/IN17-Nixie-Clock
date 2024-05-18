@@ -5,9 +5,8 @@
 #include "avr/pgmspace.h"
 
 #define BLANK 0xFF
-
 #define SHOW_TIME()                       \
-  char hour = is24Hour                    \
+  char hour = Is24Hour                    \
                   ? Hour                  \
                   : (Hour + 11) % 12 + 1; \
   Digits[0] = hour / 10;                  \
@@ -17,9 +16,14 @@
   Digits[4] = Second / 10;                \
   Digits[5] = Second % 10;
 
-enum ClockState
+enum ClockDisplay
 {
   DISPLAYOFF,
+  DISPLAYON,
+};
+
+enum ClockState
+{
   TIME,
   MANUAL,
   CATHODE_CLEAN,
@@ -29,7 +33,7 @@ const int NUM_DIGITS = 6;
 const unsigned long CYCLE_PERIOD_MS = 20;
 const unsigned char DIGIT_ANODES[NUM_DIGITS] = {0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 const int NUM_MANUAL_CYCLES = 20;
-const int NUM_CLEANING_CYCLES = 100;
+const int NUM_CLEANING_CYCLES = 300;
 
 // current digit values
 unsigned char Digits[NUM_DIGITS] = {6, 5, 4, 3, 2, 1};
@@ -43,16 +47,16 @@ volatile unsigned char Second = 0;
 // for manual display tracking
 bool Blanks[NUM_DIGITS] = {false, false, false, false, false, false};
 volatile unsigned char ManualSecondsLeft = 0;
-bool FinishedCycleIn = false;
-bool StartedCycleOut = false;
+bool ManualCycling = false;
 
 // for cycle animation tracking
 unsigned long LastCycleMillis = 0;
 unsigned int CyclesLeft;
 
 String SerialIn;
+ClockDisplay Display = DISPLAYON;
 ClockState State = TIME;
-bool is24Hour = true;
+bool Is24Hour = true;
 
 // timer1 used for RTC
 ISR(TIMER1_COMPA_vect)
@@ -87,7 +91,7 @@ ISR(TIMER2_COMPA_vect)
   PORTB = 0x00; // blank cathode
   PORTD = 0x00; // blank anodes
 
-  if (State == DISPLAYOFF)
+  if (Display == DISPLAYOFF)
     return;
 
   PORTB = Digits[Index];                                         // set cathode
@@ -136,17 +140,17 @@ void loop()
     switch (SerialIn[0])
     {
     case '0':
-      State = DISPLAYOFF;
+      Display = DISPLAYOFF;
       break;
     case '1':
-      State = TIME;
+      Display = DISPLAYON;
       break;
 
     case 'h':
-      is24Hour = false;
+      Is24Hour = false;
       break;
     case 'H':
-      is24Hour = true;
+      Is24Hour = true;
       break;
 
     case 'T':
@@ -168,12 +172,12 @@ void loop()
         break;
 
       State = MANUAL;
-      LastCycleMillis = 0;
-      CyclesLeft = NUM_MANUAL_CYCLES;
       ManualSecondsLeft = 5;
-      FinishedCycleIn = false;
-      StartedCycleOut = false;
+      CyclesLeft = NUM_MANUAL_CYCLES;
+      LastCycleMillis = 0;
+      ManualCycling = true;
 
+      // replace blanks with digit when cycling
       for (int i = 0; i < NUM_DIGITS; i++)
       {
         Blanks[i] = SerialIn[i + 1] == '_';
@@ -201,21 +205,21 @@ void loop()
   {
     if (ManualSecondsLeft > 0)
     {
-      if (!FinishedCycleIn)
+      if (ManualCycling)
       {
         // cycle in complete, restore blanks
         for (int i = 0; i < NUM_DIGITS; i++)
           if (Blanks[i])
             Digits[i] = BLANK;
 
-        FinishedCycleIn = true;
+        ManualCycling = false;
       }
     }
     else // manual display time over, cycle out
     {
-      if (!StartedCycleOut)
+      if (!ManualCycling)
       {
-        StartedCycleOut = true;
+        ManualCycling = true;
         LastCycleMillis = 0;
         CyclesLeft = NUM_MANUAL_CYCLES;
 
