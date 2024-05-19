@@ -5,16 +5,18 @@
 #include "avr/pgmspace.h"
 
 #define BLANK 0xFF
-#define SHOW_TIME()                       \
-  char hour = Is24Hour                    \
-                  ? Hour                  \
-                  : (Hour + 11) % 12 + 1; \
-  Digits[0] = hour / 10;                  \
-  Digits[1] = hour % 10;                  \
-  Digits[2] = Minute / 10;                \
-  Digits[3] = Minute % 10;                \
-  Digits[4] = Second / 10;                \
-  Digits[5] = Second % 10;
+#define SHOW_TIME()                         \
+  {                                         \
+    char hour = Is24Hour                    \
+                    ? Hour                  \
+                    : (Hour + 11) % 12 + 1; \
+    Digits[0] = hour / 10;                  \
+    Digits[1] = hour % 10;                  \
+    Digits[2] = Minute / 10;                \
+    Digits[3] = Minute % 10;                \
+    Digits[4] = Second / 10;                \
+    Digits[5] = Second % 10;                \
+  }
 
 enum ClockDisplay
 {
@@ -80,9 +82,7 @@ ISR(TIMER1_COMPA_vect)
   }
 
   if (State == TIME)
-  {
     SHOW_TIME()
-  }
 }
 
 // timer2 used for nixie tube multiplexing
