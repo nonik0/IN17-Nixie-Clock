@@ -132,7 +132,8 @@ void setup()
 
 void loop()
 {
-  if (Serial.available() > 0)
+  // avoid reading input during other states
+  if (State == TIME && Serial.available() > 0)
   {
     // read input from ESP8266/ESPHome
     SerialIn = Serial.readString();
@@ -160,17 +161,11 @@ void loop()
       break;
 
     case 'C':
-      if (State != TIME)
-        break;
-
       State = CATHODE_CLEAN;
       LastCycleMillis = 0;
       CyclesLeft = NUM_CLEANING_CYCLES;
       break;
     case 'M':
-      if (State != TIME)
-        break;
-
       State = MANUAL;
       ManualSecondsLeft = 5;
       CyclesLeft = NUM_MANUAL_CYCLES;
